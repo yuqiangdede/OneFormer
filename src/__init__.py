@@ -1,0 +1,2 @@
+"""OneFormer water segmentation package."""
+

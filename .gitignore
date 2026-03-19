@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environments
+.venv/
+venv/
+
+# IDE
+.idea/
+
+# Runtime outputs and model weights
+output/
+models/
+
+# Local test assets
+1.png
+2.png
+input/test.jpg
