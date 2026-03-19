@@ -214,3 +214,91 @@ curl -X POST "http://127.0.0.1:8000/segment" \
 - `400`：输入非法（URL 下载失败、base64 非法、图片解码失败、参数不满足约束）
 - `404`：请求的文件不存在（`/files/...`）
 - `500`：服务内部错误（如输出文件写入失败）
+
+## 6. 迁移到其他服务器（在线/离线）
+
+### 6.1 迁移原则
+
+- 代码目录可以直接拷贝。
+- 不要跨机器复用 `.venv`，目标机必须重新创建虚拟环境。
+- 模型目录 `models/oneformer_ade20k_swin_large` 可以直接拷贝复用。
+
+### 6.2 在线服务器（可联网）
+
+```bash
+cd /opt/OneFormer
+chmod +x scripts/setup_linux_cpu.sh
+./scripts/setup_linux_cpu.sh
+source .venv/bin/activate
+python download_weights.py
+python src/main.py --image input/test.jpg
+```
+
+### 6.3 离线服务器（不能联网）
+
+#### A. 在联网机器准备离线包
+
+```bash
+cd /opt/OneFormer
+mkdir -p offline_wheels
+source .venv/bin/activate
+pip download -r requirements.txt -d offline_wheels
+pip download --index-url https://download.pytorch.org/whl/cpu torch -d offline_wheels
+```
+
+如需一并准备 Python 3.11 安装包：
+
+```bash
+cd offline_wheels
+wget https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tgz
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+```
+
+#### B. 拷贝到离线服务器
+
+至少拷贝以下内容：
+
+- 项目源码目录
+- `offline_wheels/`
+- `models/oneformer_ade20k_swin_large/`
+
+#### C. 在离线服务器安装并运行
+
+```bash
+cd /opt/OneFormer
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --no-index --find-links=offline_wheels torch
+pip install --no-index --find-links=offline_wheels -r requirements.txt
+python src/main.py --image input/test.jpg
+```
+
+启动 API：
+
+```bash
+uvicorn src.api:app --host 0.0.0.0 --port 8000
+```
+
+## 7. 证书问题（公司代理环境）
+
+如果下载时出现证书错误（如 `SANGFOR-AC`）：
+
+```text
+Unable to locally verify the issuer's authority
+```
+
+推荐做法（安全）：
+
+1. 向运维获取公司根证书（如 `sangfor-ca.crt`）
+2. 加入系统信任
+
+```bash
+sudo cp sangfor-ca.crt /usr/local/share/ca-certificates/
+sudo update-ca-certificates
+```
+
+临时兜底（不安全，仅受控内网短期使用）：
+
+```bash
+wget --no-check-certificate <URL>
+```

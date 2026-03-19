@@ -4,3 +4,5 @@ numpy<2
 fastapi
 uvicorn
 requests
+pillow
+scipy
