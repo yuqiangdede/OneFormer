@@ -15,7 +15,6 @@ venv/
 output/
 models/
 
-# Local test assets
-1.png
-2.png
-input/test.jpg
+# Input assets
+input/*
+!input/.gitkeep

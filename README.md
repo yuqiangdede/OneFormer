@@ -1,15 +1,33 @@
-# OneFormer 单图水域分割（仅 `swin_large`）
+# OneFormer 批量水域分割（仅 `swin_large`）
 
 本项目仅保留一个模型：
 
 - `shi-labs/oneformer_ade20k_swin_large`
 
-输出：
+批量输出规则：
 
-- `output/water_mask.png`
-- `output/water_overlay.png`
-- `output/water_coords.json`
-- `output/stats.json`
+- 自动递归扫描 `input/` 下所有图片
+- 若 `input/` 内有子目录，`output/` 中保留相同目录结构
+- 每张原图输出 3 个文件：
+  - 原图副本：`A.jpg`
+  - mask：`A-mask.png`
+  - overlay：`A-overlay.jpg`
+
+示例：
+
+```text
+input/
+└── 7-14/
+    └── 4106/
+        └── test.jpg
+
+output/
+└── 7-14/
+    └── 4106/
+        ├── test.jpg
+        ├── test-mask.png
+        └── test-overlay.jpg
+```
 
 ## 1. 环境准备
 
@@ -41,17 +59,33 @@ python download_weights.py
 - 权重目录固定为 `models/oneformer_ade20k_swin_large`。
 - 若目录已完整，下载脚本会自动跳过，不重复下载。
 
-## 3. 推理
+## 3. 批量处理
 
 ```bash
-python src/main.py --image input/test.jpg
+python src/main.py --input input --output-dir output
 ```
 
 可选参数：
 
+- `--input`：输入图片或目录，默认 `input`
 - `--output-dir`：输出目录（默认 `output`）
 - `--min-area`：连通域面积阈值（默认 `300`）
 - `--alpha`：overlay 透明度（默认 `0.4`）
+
+一键执行脚本：
+
+Windows PowerShell:
+
+```powershell
+.\scripts\run_all.ps1
+```
+
+Linux:
+
+```bash
+chmod +x scripts/run_all.sh
+./scripts/run_all.sh
+```
 
 ## 4. 单元测试
 
@@ -231,7 +265,7 @@ chmod +x scripts/setup_linux_cpu.sh
 ./scripts/setup_linux_cpu.sh
 source .venv/bin/activate
 python download_weights.py
-python src/main.py --image input/test.jpg
+python src/main.py --input input --output-dir output
 ```
 
 ### 6.3 离线服务器（不能联网）
@@ -270,7 +304,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install --no-index --find-links=offline_wheels torch
 pip install --no-index --find-links=offline_wheels -r requirements.txt
-python src/main.py --image input/test.jpg
+python src/main.py --input input --output-dir output
 ```
 
 启动 API：
