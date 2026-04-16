@@ -25,6 +25,8 @@ class OneFormerPredictor:
         if not self.model_dir.exists():
             raise FileNotFoundError(f"Local model dir not found: {self.model_dir}")
 
+        self._ensure_local_preprocessor_config()
+
         metadata_path = self.model_dir / "ade20k_panoptic.json"
         if metadata_path.exists():
             with open(metadata_path, "r", encoding="utf-8") as f:
@@ -54,6 +56,24 @@ class OneFormerPredictor:
 
         self.model.to(self.device)
         self.model.eval()
+
+    def _ensure_local_preprocessor_config(self) -> None:
+        config_path = self.model_dir / "preprocessor_config.json"
+        if not config_path.exists():
+            return
+
+        try:
+            with config_path.open("r", encoding="utf-8") as f:
+                config = json.load(f)
+        except json.JSONDecodeError:
+            config = {}
+
+        if config.get("repo_path") == str(self.model_dir) and config.get("class_info_file") == "ade20k_panoptic.json":
+            return
+
+        config["repo_path"] = str(self.model_dir)
+        config["class_info_file"] = "ade20k_panoptic.json"
+        config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
 
     @torch.no_grad()
     def predict(self, image_rgb: np.ndarray) -> np.ndarray:

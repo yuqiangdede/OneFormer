@@ -4,7 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from download_weights import is_model_dir_complete
+import json
+
+from download_weights import ensure_preprocessor_config, is_model_dir_complete
 from src.labels import build_oneformer_ade20k_metadata
 
 
@@ -46,6 +48,21 @@ class TestDownloadWeights(unittest.TestCase):
         self.assertEqual(metadata["149"], "flag")
         self.assertEqual(len(metadata["thing_ids"]), 100)
         self.assertEqual(len(metadata["class_names"]), 150)
+
+    def test_preprocessor_config_is_rewritten_to_local_repo(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            model_dir = Path(tmp)
+            config_path = model_dir / "preprocessor_config.json"
+            config_path.write_text(
+                json.dumps({"repo_path": "shi-labs/oneformer_demo", "class_info_file": "ade20k_panoptic.json"}),
+                encoding="utf-8",
+            )
+
+            ensure_preprocessor_config(model_dir)
+
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+            self.assertEqual(config["repo_path"], str(model_dir))
+            self.assertEqual(config["class_info_file"], "ade20k_panoptic.json")
 
 
 if __name__ == "__main__":

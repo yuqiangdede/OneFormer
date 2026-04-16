@@ -27,11 +27,26 @@ def ensure_metadata_file(output_dir: Path) -> Path:
     return metadata_path
 
 
+def ensure_preprocessor_config(output_dir: Path) -> Path:
+    config_path = output_dir / "preprocessor_config.json"
+    if config_path.exists():
+        with config_path.open("r", encoding="utf-8") as f:
+            config = json.load(f)
+    else:
+        config = {}
+
+    config["repo_path"] = str(output_dir)
+    config["class_info_file"] = "ade20k_panoptic.json"
+    config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
+    return config_path
+
+
 def main() -> None:
     output_dir = Path(MODEL_LOCAL_DIR)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     ensure_metadata_file(output_dir)
+    ensure_preprocessor_config(output_dir)
 
     if is_model_dir_complete(output_dir):
         print(f"[SKIP] Model already exists and is complete: {output_dir}")
@@ -44,6 +59,8 @@ def main() -> None:
     print(f"[DOWNLOAD] model: {MODEL_NAME}")
     model = OneFormerForUniversalSegmentation.from_pretrained(MODEL_NAME)
     model.save_pretrained(str(output_dir))
+
+    ensure_preprocessor_config(output_dir)
 
     if not is_model_dir_complete(output_dir):
         raise RuntimeError(f"Download finished but model dir is incomplete: {output_dir}")
