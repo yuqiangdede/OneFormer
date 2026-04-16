@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
+from typing import Any
 
 
 ADE20K_LABELS = [
@@ -164,6 +165,118 @@ WATER_RELATED_LABEL_NAMES = tuple(
     for label in ADE20K_LABELS
     if label in {"water", "sea", "river", "lake", "waterfall", "swimming pool", "fountain"}
 )
+
+# Official OneFormer ADE20K thing class ids, kept here so we can rebuild the
+# processor metadata without depending on an extra downloaded JSON file.
+ONEFORMER_ADE20K_THING_IDS = (
+    7,
+    8,
+    10,
+    12,
+    14,
+    15,
+    18,
+    19,
+    20,
+    22,
+    23,
+    24,
+    27,
+    30,
+    31,
+    32,
+    33,
+    35,
+    36,
+    37,
+    38,
+    39,
+    41,
+    42,
+    43,
+    44,
+    45,
+    47,
+    49,
+    50,
+    53,
+    55,
+    56,
+    57,
+    58,
+    62,
+    64,
+    65,
+    66,
+    67,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76,
+    78,
+    80,
+    81,
+    82,
+    83,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    92,
+    93,
+    95,
+    97,
+    98,
+    102,
+    103,
+    104,
+    107,
+    108,
+    110,
+    111,
+    112,
+    115,
+    116,
+    118,
+    119,
+    120,
+    121,
+    123,
+    124,
+    125,
+    126,
+    127,
+    129,
+    130,
+    132,
+    133,
+    134,
+    135,
+    136,
+    137,
+    138,
+    139,
+    142,
+    143,
+    144,
+    146,
+    147,
+    148,
+    149,
+)
+
+
+def build_oneformer_ade20k_metadata() -> dict[str, Any]:
+    metadata: dict[str, Any] = {str(idx): label for idx, label in enumerate(ADE20K_LABELS)}
+    metadata["thing_ids"] = list(ONEFORMER_ADE20K_THING_IDS)
+    metadata["class_names"] = list(ADE20K_LABELS)
+    return metadata
 
 
 def resolve_label_ids(label_names: Iterable[str]) -> tuple[list[int], list[str]]:

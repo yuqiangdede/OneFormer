@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from pathlib import Path
 import json
+from pathlib import Path
 
 import numpy as np
 import torch
 from transformers import OneFormerForUniversalSegmentation, OneFormerProcessor
 
 from src.config import INPUT_SIZE, MODEL_LOCAL_DIR
+from src.labels import build_oneformer_ade20k_metadata
 
 
 class OneFormerPredictor:
@@ -24,27 +25,30 @@ class OneFormerPredictor:
         if not self.model_dir.exists():
             raise FileNotFoundError(f"Local model dir not found: {self.model_dir}")
 
+        metadata_path = self.model_dir / "ade20k_panoptic.json"
+        if metadata_path.exists():
+            with open(metadata_path, "r", encoding="utf-8") as f:
+                metadata = json.load(f)
+        else:
+            metadata = build_oneformer_ade20k_metadata()
+            try:
+                metadata_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
+            except OSError:
+                pass
+
         try:
             self.processor = OneFormerProcessor.from_pretrained(
                 str(self.model_dir),
-                local_files_only=True
+                local_files_only=True,
             )
             self.model = OneFormerForUniversalSegmentation.from_pretrained(
                 str(self.model_dir),
-                local_files_only=True
+                local_files_only=True,
             )
         except Exception as e:
             raise RuntimeError(
                 f"Failed to load local model from: {self.model_dir}"
             ) from e
-
-        # 🔥 强制加载本地 metadata（关键）
-        metadata_path = self.model_dir / "ade20k_panoptic.json"
-        if not metadata_path.exists():
-            raise RuntimeError(f"Missing metadata: {metadata_path}")
-
-        with open(metadata_path, "r") as f:
-            metadata = json.load(f)
 
         self.processor.image_processor.metadata = metadata
 
@@ -74,7 +78,7 @@ class OneFormerPredictor:
 
         segmentation = self.processor.post_process_semantic_segmentation(
             outputs,
-            target_sizes=[(target_h, target_w)]
+            target_sizes=[(target_h, target_w)],
         )[0]
 
         return segmentation.detach().cpu().numpy().astype(np.int32)
