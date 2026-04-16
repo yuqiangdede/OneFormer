@@ -99,6 +99,10 @@ class OneFormerPredictor:
                 return False
         return bool(value)
 
+    def warmup(self) -> None:
+        dummy_image = np.zeros((self.input_size, self.input_size, 3), dtype=np.uint8)
+        self.predict(dummy_image)
+
     @torch.no_grad()
     def predict(self, image_rgb: np.ndarray) -> np.ndarray:
         if image_rgb.ndim != 3 or image_rgb.shape[2] != 3:

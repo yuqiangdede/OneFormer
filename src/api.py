@@ -6,6 +6,7 @@ import os
 import shutil
 import time
 import uuid
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -24,13 +25,14 @@ from src.polygons import mask_to_polygons, normalize_polygons
 from src.postprocess import extract_water_mask, keep_large, refine_mask
 from src.visualize import overlay
 
+logger = logging.getLogger(__name__)
+
 app = FastAPI(title="OneFormer Water Seg API")
 
 OUTPUT_API_DIR = Path(os.getenv("OUTPUT_API_DIR", "output/api"))
 OUTPUT_RETENTION_HOURS = int(os.getenv("OUTPUT_RETENTION_HOURS", "24"))
 OUTPUT_API_DIR.mkdir(parents=True, exist_ok=True)
 
-predictor = OneFormerPredictor()
 water_ids, missing_labels = resolve_label_ids(sorted(WATER_LABEL_NAMES))
 if not water_ids:
     raise RuntimeError(f"WATER_LABEL_NAMES is invalid, missing={missing_labels}")
@@ -115,6 +117,14 @@ def cleanup_expired_outputs(base_dir: Path, retention_hours: int) -> int:
     return removed
 
 
+@app.on_event("startup")
+def initialize_predictor() -> None:
+    predictor = OneFormerPredictor()
+    predictor.warmup()
+    app.state.predictor = predictor
+    logger.info("OneFormer predictor initialized and warmed up")
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -131,6 +141,10 @@ def files(file_path: str) -> FileResponse:
 @app.post("/segment")
 def segment(req: SegmentRequest, request: Request) -> dict[str, Any]:
     cleanup_expired_outputs(OUTPUT_API_DIR, OUTPUT_RETENTION_HOURS)
+
+    predictor = getattr(request.app.state, "predictor", None)
+    if predictor is None:
+        raise HTTPException(status_code=500, detail="Predictor is not initialized")
 
     image_bgr = _load_image_from_url(req.image_url) if req.image_url else _load_image_from_base64(req.image_base64 or "")
     image_rgb = bgr_to_rgb(image_bgr)
