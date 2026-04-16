@@ -35,7 +35,7 @@ def ensure_preprocessor_config(output_dir: Path) -> Path:
     else:
         config = {}
 
-    config["repo_path"] = str(output_dir)
+    config["repo_path"] = str(output_dir.resolve())
     config["class_info_file"] = "ade20k_panoptic.json"
     config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
     return config_path

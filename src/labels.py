@@ -273,9 +273,13 @@ ONEFORMER_ADE20K_THING_IDS = (
 
 
 def build_oneformer_ade20k_metadata() -> dict[str, Any]:
-    metadata: dict[str, Any] = {str(idx): label for idx, label in enumerate(ADE20K_LABELS)}
-    metadata["thing_ids"] = list(ONEFORMER_ADE20K_THING_IDS)
-    metadata["class_names"] = list(ADE20K_LABELS)
+    thing_ids = set(ONEFORMER_ADE20K_THING_IDS)
+    metadata: dict[str, Any] = {}
+    for idx, label in enumerate(ADE20K_LABELS):
+        metadata[str(idx)] = {
+            "name": label,
+            "isthing": idx in thing_ids,
+        }
     return metadata
 
 

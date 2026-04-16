@@ -44,10 +44,14 @@ class TestDownloadWeights(unittest.TestCase):
 
     def test_metadata_helper_shape(self) -> None:
         metadata = build_oneformer_ade20k_metadata()
-        self.assertEqual(metadata["0"], "wall")
-        self.assertEqual(metadata["149"], "flag")
-        self.assertEqual(len(metadata["thing_ids"]), 100)
-        self.assertEqual(len(metadata["class_names"]), 150)
+        self.assertEqual(metadata["0"]["name"], "wall")
+        self.assertFalse(metadata["0"]["isthing"])
+        self.assertEqual(metadata["21"]["name"], "water")
+        self.assertFalse(metadata["21"]["isthing"])
+        self.assertEqual(metadata["149"]["name"], "flag")
+        self.assertTrue(metadata["149"]["isthing"])
+        self.assertEqual(sum(1 for item in metadata.values() if item["isthing"]), 100)
+        self.assertEqual(len(metadata), 150)
 
     def test_preprocessor_config_is_rewritten_to_local_repo(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
