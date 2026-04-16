@@ -104,7 +104,7 @@ uvicorn src.api:app --host 0.0.0.0 --port 8000
 可选环境变量（Linux 部署建议）：
 
 ```bash
-export OUTPUT_API_DIR=/data/oneformer/output_api
+export OUTPUT_API_DIR=output/api
 export OUTPUT_RETENTION_HOURS=24
 ```
 
@@ -260,7 +260,6 @@ curl -X POST "http://127.0.0.1:8000/segment" \
 ### 6.2 在线服务器（可联网）
 
 ```bash
-cd /opt/OneFormer
 chmod +x scripts/setup_linux_cpu.sh
 ./scripts/setup_linux_cpu.sh
 source .venv/bin/activate
@@ -273,7 +272,6 @@ python src/main.py --input input --output-dir output
 #### A. 在联网机器准备离线包
 
 ```bash
-cd /opt/OneFormer
 mkdir -p offline_wheels
 source .venv/bin/activate
 pip download -r requirements.txt -d offline_wheels
@@ -299,7 +297,6 @@ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 #### C. 在离线服务器安装并运行
 
 ```bash
-cd /opt/OneFormer
 python3 -m venv .venv
 source .venv/bin/activate
 pip install --no-index --find-links=offline_wheels torch
